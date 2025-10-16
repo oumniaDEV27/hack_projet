@@ -1,0 +1,51 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Mes Selfies</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="streaming ? stopCamera() : startCamera()">
+        {{ streaming ? 'Arrêter' : 'Activer caméra' }}
+      </ion-button>
+      <ion-button [disabled]="!streaming" (click)="takeSnapshot()">
+        Prendre photo
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <!-- Flux caméra (toujours dans le DOM) -->
+  <div class="camera">
+    <video #videoEl autoplay playsinline muted [class.hidden]="!streaming"></video>
+    <!-- canvas caché pour la capture -->
+    <canvas #canvasEl hidden></canvas>
+  </div>
+
+  <!-- Galerie -->
+  <ion-grid>
+    <ion-row>
+      <ion-col size="6" *ngFor="let p of photoService.photos; let i = index">
+        <ion-card>
+          <img [src]="p.webviewPath" alt="selfie" />
+          <ion-card-content>
+            <div class="meta">
+              <div>{{ p.takenAt | date:'short' }}</div>
+              <div *ngIf="p.coords">
+                📍 {{ p.coords.lat | number:'1.4-4' }}, {{ p.coords.lng | number:'1.4-4' }}
+              </div>
+            </div>
+            <ion-buttons>
+              <ion-button fill="clear" (click)="toggleLike(i)">
+                <ion-icon slot="start" name="heart" [color]="p.liked ? 'danger' : undefined"></ion-icon>
+                {{ p.liked ? 'Unlike' : 'Like' }}
+              </ion-button>
+              <ion-button fill="clear" color="medium" (click)="confirmDelete(i)">
+                <ion-icon slot="start" name="trash"></ion-icon>
+                Supprimer
+              </ion-button>
+            </ion-buttons>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+</ion-content>

@@ -1,0 +1,7 @@
+{
+  "name": "selfie-map",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}
