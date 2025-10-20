@@ -1,6 +1,7 @@
 <ion-header>
   <ion-toolbar>
     <ion-title>Mes Selfies</ion-title>
+
     <ion-buttons slot="end">
       <ion-button (click)="streaming ? stopCamera() : startCamera()">
         {{ streaming ? 'Arrêter' : 'Activer caméra' }}
@@ -10,48 +11,70 @@
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
+
+  <!-- Switch Galerie / Carte -->
+  <ion-toolbar>
+    <ion-segment [(ngModel)]="view" (ionChange)="onViewChange()">
+      <ion-segment-button value="grid">
+        <ion-label>Galerie</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="map">
+        <ion-label>Carte</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+
+    <ion-buttons slot="end">
+      <ion-button (click)="centerOnMe()" [disabled]="view !== 'map'">
+        Centrer sur moi
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
 </ion-header>
 
 <ion-content>
-  <!-- Flux caméra (toujours dans le DOM) -->
+  <!-- Flux caméra -->
   <div class="camera">
     <video #videoEl autoplay playsinline muted [class.hidden]="!streaming"></video>
-    <!-- canvas caché pour la capture -->
     <canvas #canvasEl hidden></canvas>
   </div>
 
-<!-- Carte (MapLibre) -->
-<div class="map-wrap">
-  <div #mapEl class="map-container"></div>
-</div>
+  <!-- CARTE (visible uniquement en mode 'map') -->
+  <ng-container *ngIf="view === 'map'">
+    <div class="map-wrap">
+      <div #mapEl class="map-container"></div>
+    </div>
+  </ng-container>
 
-
-  <!-- Galerie -->
-  <ion-grid>
-    <ion-row>
-      <ion-col size="6" *ngFor="let p of photoService.photos; let i = index">
-        <ion-card>
-          <img [src]="p.webviewPath" alt="selfie" />
-          <ion-card-content>
-            <div class="meta">
-              <div>{{ p.takenAt | date:'short' }}</div>
-              <div *ngIf="p.coords">
-                📍 {{ p.coords.lat | number:'1.4-4' }}, {{ p.coords.lng | number:'1.4-4' }}
+  <!-- GALERIE (visible uniquement en mode 'grid') -->
+  <ng-container *ngIf="view === 'grid'">
+    <ion-grid>
+      <ion-row>
+        <ion-col size="6" *ngFor="let p of photoService.photos; let i = index">
+          <ion-card (click)="focusOnPhoto(i)">
+            <img [src]="p.webviewPath" alt="selfie" />
+            <ion-card-content>
+              <div class="meta">
+                <div>{{ p.takenAt | date:'short' }}</div>
+                <div *ngIf="p.coords">
+                  📍 {{ p.coords.lat | number:'1.4-4' }}, {{ p.coords.lng | number:'1.4-4' }}
+                </div>
               </div>
-            </div>
-            <ion-buttons>
-              <ion-button fill="clear" (click)="toggleLike(i)">
-                <ion-icon slot="start" name="heart" [color]="p.liked ? 'danger' : undefined"></ion-icon>
-                {{ p.liked ? 'Unlike' : 'Like' }}
-              </ion-button>
-              <ion-button fill="clear" color="medium" (click)="confirmDelete(i)">
-                <ion-icon slot="start" name="trash"></ion-icon>
-                Supprimer
-              </ion-button>
-            </ion-buttons>
-          </ion-card-content>
-        </ion-card>
-      </ion-col>
-    </ion-row>
-  </ion-grid>
+
+              <ion-buttons>
+                <ion-button fill="clear" (click)="toggleLike(i); $event.stopPropagation()">
+                  <ion-icon slot="start" name="heart" [color]="p.liked ? 'danger' : undefined"></ion-icon>
+                  {{ p.liked ? 'Unlike' : 'Like' }}
+                </ion-button>
+
+                <ion-button fill="clear" color="medium" (click)="confirmDelete(i); $event.stopPropagation()">
+                  <ion-icon slot="start" name="trash"></ion-icon>
+                  Supprimer
+                </ion-button>
+              </ion-buttons>
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </ng-container>
 </ion-content>

@@ -1,0 +1,16 @@
+.preview-wrap {
+  display: grid;
+  place-items: center;
+  height: 100%;
+}
+.preview-wrap img {
+  max-width: 95%;
+  max-height: 80vh;
+  border-radius: 12px;
+  display: block;
+}
+.preview-wrap .meta {
+  margin-top: 8px;
+  opacity: .75;
+  font-size: 12px;
+}

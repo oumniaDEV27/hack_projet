@@ -1,0 +1,45 @@
+.cam {
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.preview-box {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 240px;
+  background: #000;
+  overflow: hidden;
+}
+.preview-box video,
+.preview-box img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* montre toute l’image */
+  background: #000;
+}
+.preview-box.mirrored video {
+  transform: scaleX(-1);
+}
+
+.hidden { display: none !important; }
+
+.controls {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  background: var(--ion-background-color);
+  box-shadow: 0 -2px 8px rgba(0,0,0,.15);
+  z-index: 1;
+}
+@media (min-width: 600px) {
+  .controls { grid-template-columns: repeat(4, auto); justify-content: center; }
+}
