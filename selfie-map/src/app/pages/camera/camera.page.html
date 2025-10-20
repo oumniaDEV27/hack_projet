@@ -8,17 +8,13 @@
 </ion-header>
 
 <ion-content class="cam" fullscreen>
-  <!-- Zone d’affichage -->
   <div class="preview-box" [class.mirrored]="useFront">
-    <!-- LIVE: montre la vidéo -->
     <video #videoEl playsinline autoplay muted [class.hidden]="isReview"></video>
-    <!-- REVIEW: montre la photo capturée -->
     <img *ngIf="isReview" [src]="snapshotDataUrl" alt="Aperçu photo" />
-    <!-- Canvas invisible utilisé uniquement pour capturer -->
     <canvas #canvasEl class="hidden"></canvas>
   </div>
 
-  <!-- Contrôles LIVE -->
+
   <div class="controls" *ngIf="!isReview">
     <ion-button (click)="startPreview()" [disabled]="previewing">DÉMARRER LE PREVIEW</ion-button>
     <ion-button (click)="switchCamera()" [disabled]="!previewing">INVERSER CAMÉRA</ion-button>
@@ -28,7 +24,7 @@
     <ion-button expand="block" fill="outline" routerLink="/photos">ANNULER</ion-button>
   </div>
 
-  <!-- Contrôles REVIEW -->
+
   <div class="controls" *ngIf="isReview">
     <ion-button fill="outline" (click)="retake()">REPRENDRE</ion-button>
     <ion-button color="primary" (click)="usePhoto()">UTILISER LA PHOTO</ion-button>
