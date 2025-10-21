@@ -1,203 +1,3 @@
-// import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
-// import { IonicModule } from '@ionic/angular';
-// import { CommonModule } from '@angular/common';
-// import { ActivatedRoute } from '@angular/router';
-// import * as maplibregl from 'maplibre-gl';
-// import { PhotoService } from '../../core/photo.service';
-
-// // (optionnel) carrousel pour les photos d’un cluster
-// import { register } from 'swiper/element/bundle';
-// register();
-
-// @Component({
-//   standalone: true,
-//   selector: 'app-map',
-//   templateUrl: './map.page.html',
-//   styleUrls: ['./map.page.scss'],
-//   imports: [IonicModule, CommonModule],
-// })
-// export class MapPage implements OnInit, OnDestroy {
-//   @ViewChild('mapEl') mapRef!: ElementRef<HTMLDivElement>;
-
-//   private map?: maplibregl.Map;
-//   private ro?: ResizeObserver;
-//   private readonly mapSourceId = 'photos';
-
-//   // état du carrousel (modal)
-//   clusterOpen = false;
-//   clusterLeaves: Array<any> = [];
-
-//   constructor(
-//     private route: ActivatedRoute,
-//     private photoService: PhotoService
-//   ) {}
-
-//   async ngOnInit() {
-//     // au cas où on arrive directement sur /map
-//     await this.photoService.loadSaved();
-//   }
-
-//   async ionViewDidEnter() {
-//     await this.initMap();
-//   }
-
-//   ngOnDestroy(): void {
-//     try { this.ro?.disconnect(); } catch {}
-//     this.map?.remove();
-//     this.map = undefined;
-//   }
-
-//   /** ============== helpers ============== */
-
-//   private async waitUntilVisible(el: HTMLElement): Promise<void> {
-//     await new Promise<void>(resolve => {
-//       const check = () => {
-//         const ok = el.offsetParent !== null && el.clientWidth > 0 && el.clientHeight > 0;
-//         if (ok) return resolve();
-//         requestAnimationFrame(check);
-//       };
-//       check();
-//     });
-//   }
-
-//   private buildGeoJSON() {
-//     const features = this.photoService.photos
-//       .filter(p => !!p.coords)
-//       .map(p => ({
-//         type: 'Feature' as const,
-//         geometry: { type: 'Point' as const, coordinates: [p.coords!.lng, p.coords!.lat] },
-//         properties: { takenAt: p.takenAt, image: p.webviewPath || '' },
-//       }));
-//     return { type: 'FeatureCollection' as const, features };
-//   }
-
-//   /** ============== map init ============== */
-//   private async initMap() {
-//     if (this.map) return;
-
-//     const container = this.mapRef.nativeElement;
-//     await this.waitUntilVisible(container);
-
-//     const style: any = {
-//       version: 8,
-//       glyphs: 'https://demotiles.maplibre.org/fonts/{fontstack}/{range}.pbf',
-//       sources: {
-//         osm: {
-//           type: 'raster',
-//           tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-//           tileSize: 256,
-//           attribution: '© OpenStreetMap contributors'
-//         }
-//       },
-//       layers: [{ id: 'osm', type: 'raster', source: 'osm' }]
-//     };
-
-//     const map = this.map = new (maplibregl as any).Map({
-//       container,
-//       style,
-//       center: [2.33, 48.86],
-//       zoom: 4
-//     });
-
-//     // resize auto
-//     try { this.ro?.disconnect(); } catch {}
-//     this.ro = new ResizeObserver(() => this.map?.resize());
-//     this.ro.observe(container);
-
-//     requestAnimationFrame(() => this.map?.resize());
-//     setTimeout(() => this.map?.resize(), 150);
-
-//     map.addControl(new (maplibregl as any).NavigationControl(), 'top-right');
-
-//     map.on('load', () => {
-//       const srcId = this.mapSourceId;
-
-//       // source + clustering
-//       map.addSource(srcId, {
-//         type: 'geojson',
-//         data: this.buildGeoJSON() as any,
-//         cluster: true,
-//         clusterMaxZoom: 14,
-//         clusterRadius: 50
-//       } as any);
-
-//       // cercles des clusters
-//       map.addLayer({
-//         id: 'clusters',
-//         type: 'circle',
-//         source: srcId,
-//         filter: ['has', 'point_count'],
-//         paint: {
-//           'circle-color': [
-//             'step', ['get', 'point_count'],
-//             '#A0E3FF', 10, '#7CC1F2', 30, '#4E8AD9', 100, '#2F5FB3'
-//           ],
-//           'circle-radius': [
-//             'step', ['get', 'point_count'],
-//             18, 10, 22, 30, 28, 100, 34
-//           ]
-//         } as any
-//       });
-
-//       // texte des clusters
-//       map.addLayer({
-//         id: 'cluster-count',
-//         type: 'symbol',
-//         source: srcId,
-//         filter: ['has', 'point_count'],
-//         layout: {
-//           'text-field': ['get', 'point_count_abbreviated'],
-//           'text-font': ['Open Sans Regular'],
-//           'text-size': 12
-//         } as any
-//       });
-
-//       // click cluster -> zoom OU carousel des leaves
-//       map.on('click', 'clusters', (e: any) => {
-//         const feats = map.queryRenderedFeatures(e.point, { layers: ['clusters'] });
-//         if (!feats.length) return;
-
-//         const clusterId = (feats[0].properties as any)['cluster_id'];
-//         const src = map.getSource(srcId) as any;
-
-//         // on récupère les leaves pour le carrousel
-//         src.getClusterLeaves(clusterId, 50, 0, (err: any, leaves: any[]) => {
-//           if (err) return;
-//           const withImages = leaves.filter(l => l?.properties?.image);
-//           if (withImages.length) {
-//             this.clusterLeaves = withImages;
-//             this.clusterOpen = true;
-//           } else {
-//             // sinon, comportement "zoom" classique
-//             src.getClusterExpansionZoom(clusterId, (err2: any, zoom: number) => {
-//               if (err2) return;
-//               const coords = (feats[0].geometry as any).coordinates;
-//               map.easeTo({ center: coords, zoom });
-//             });
-//           }
-//         });
-//       });
-
-//       map.on('mouseenter', 'clusters', () => map.getCanvas().style.cursor = 'pointer');
-//       map.on('mouseleave', 'clusters', () => map.getCanvas().style.cursor = '');
-
-//       // centrage via query params ?lat=..&lng=..&z=..
-//       this.route.queryParamMap.subscribe(q => {
-//         const lat = Number(q.get('lat'));
-//         const lng = Number(q.get('lng'));
-//         const z = Number(q.get('z') || 13);
-//         if (isFinite(lat) && isFinite(lng)) {
-//           map.easeTo({ center: [lng, lat], zoom: z });
-//         } else {
-//           const first = this.photoService.photos.find(p => p.coords);
-//           if (first) map.easeTo({ center: [first.coords!.lng, first.coords!.lat], zoom: 10 });
-//         }
-//       });
-//     });
-//   }
-// }
-
-
 
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
@@ -222,22 +22,13 @@ export class MapPage implements OnInit, OnDestroy {
   constructor(private photoService: PhotoService) {}
 
   async ngOnInit() {
-    // Précharge les photos si ce n'est pas déjà fait
     await this.photoService.loadSaved();
   }
 
   ionViewDidEnter() {
-    // (ré)initialise la carte quand on entre sur la page
     if (!this.map) this.initMap();
-
-    // met à jour les données (utile si on arrive depuis la prise de photo)
     this.refreshMapData();
-
-    // assure le bon sizing après animation de page
-    setTimeout(() => this.map?.resize(), 150);
-
-    // centre automatiquement près de l’utilisateur (silencieux si refus)
-    setTimeout(() => this.centerNearMe(), 300);
+    setTimeout(() => this.map?.resize(), 120);
   }
 
   ngOnDestroy() {
@@ -245,81 +36,51 @@ export class MapPage implements OnInit, OnDestroy {
     this.map?.remove();
   }
 
-// Dans MapPage (à l'intérieur de la classe)
-async centerNearMe() {
-  if (!this.map) return;
-  try {
-    const pos = await new Promise<GeolocationPosition>((res, rej) =>
-      navigator.geolocation.getCurrentPosition(res, rej, {
-        enableHighAccuracy: true,
-        timeout: 7000,
-        maximumAge: 0
-      })
-    );
-    this.map.easeTo({
-      center: [pos.coords.longitude, pos.coords.latitude],
-      zoom: 13,
-      duration: 800
-    });
-  } catch {
-    // Fallback: 1re photo connue ou centre par défaut
-    const first = this.photoService.photos.find(p => p.coords);
-    const center: [number, number] = first
-      ? [first.coords!.lng, first.coords!.lat]
-      : [2.33, 48.86];
-    this.map.easeTo({ center, zoom: first ? 12 : 5, duration: 800 });
-  }
-}
 
-
-  /** ====== 1) Regroupe les photos par lieu (coords arrondies) ====== */
   private buildGroupedGeoJSON() {
-    const PREC = 5; // 5 décimales ~ 1.1 m — diminue pour regrouper plus large
+    const PREC = 5; // ~1.1 m
     const buckets = new Map<
       string,
       { lng: number; lat: number; photos: Array<{ image: string; takenAt: number }> }
     >();
 
+    let totalWithCoords = 0;
+
     for (const p of this.photoService.photos) {
-      if (!p.coords) continue;
-      const { lng, lat } = p.coords;
+      if (!p?.coords) continue;
+      const lng = Number((p.coords as any).lng);
+      const lat = Number((p.coords as any).lat);
+      if (!Number.isFinite(lng) || !Number.isFinite(lat)) continue;
+
+      totalWithCoords++;
       const key = `${lng.toFixed(PREC)}|${lat.toFixed(PREC)}`;
-
       if (!buckets.has(key)) buckets.set(key, { lng, lat, photos: [] });
-
-      // conversion robuste en number
-      let takenAtNum: number;
-      if (typeof p.takenAt === 'number') {
-        takenAtNum = p.takenAt;
-      } else {
-        const parsed = Date.parse(p.takenAt as any);
-        takenAtNum = Number.isNaN(parsed) ? +p.takenAt : parsed;
-      }
-
       buckets.get(key)!.photos.push({
         image: p.webviewPath || '',
-        takenAt: takenAtNum,
+        takenAt: typeof p.takenAt === 'number' ? p.takenAt : Date.parse(p.takenAt),
       });
     }
 
     const features = [...buckets.values()].map(b => ({
       type: 'Feature' as const,
       geometry: { type: 'Point' as const, coordinates: [b.lng, b.lat] },
-      // ⚠️ certains pipelines GeoJSON n’aiment pas les objets profonds → on stringify
       properties: {
         count: b.photos.length,
         photos: JSON.stringify(b.photos),
       },
     }));
 
+    console.log('[Map] buildGroupedGeoJSON -> photos avec coords:',
+      totalWithCoords, '| clusters:', features.length);
+
     return { type: 'FeatureCollection' as const, features };
   }
 
-  /** ====== 2) Init carte + source clusterisée + couches ====== */
+
   private initMap() {
     const style: any = {
       version: 8,
-      glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+      glyphs: 'https://demotiles.maplibre.org/fonts/{fontstack}/{range}.pbf', // <- correct
       sources: {
         osm: {
           type: 'raster',
@@ -335,44 +96,35 @@ async centerNearMe() {
       container: this.mapRef.nativeElement,
       style,
       center: [2.33, 48.86],
-      zoom: 3,
+      zoom: 4,
     }));
 
     map.addControl(new (maplibregl as any).NavigationControl(), 'top-right');
 
     map.on('load', () => {
-      // Source clusterisée
+      const data = this.buildGroupedGeoJSON();
+
       map.addSource(this.mapSourceId, {
         type: 'geojson',
-        data: this.buildGroupedGeoJSON() as any,
+        data: data as any,
         cluster: true,
-        clusterRadius: 50,
-        clusterMaxZoom: 14,
+        clusterRadius: 64,
+        clusterMaxZoom: 15,
       } as any);
 
-      // Cercles des clusters (plus gros + halo blanc)
       map.addLayer({
         id: 'clusters',
         type: 'circle',
         source: this.mapSourceId,
         filter: ['has', 'point_count'],
         paint: {
-          'circle-color': [
-            'step', ['get', 'point_count'],
-            '#9AD9FF', 10, '#5DB8FF',
-            30, '#2F8CFF',
-            100, '#1E64D2'
-          ],
-          'circle-radius': [
-            'step', ['get', 'point_count'],
-            24, 10, 30, 30, 38, 100, 46
-          ],
+          'circle-color': '#2F7CF6',
+          'circle-radius': ['step', ['get', 'point_count'], 22, 10, 28, 30, 34, 100, 42],
           'circle-stroke-color': '#ffffff',
-          'circle-stroke-width': 2
+          'circle-stroke-width': 3,
         } as any,
       });
 
-      // Label compteur des clusters (plus grand + halo)
       map.addLayer({
         id: 'cluster-count',
         type: 'symbol',
@@ -381,17 +133,11 @@ async centerNearMe() {
         layout: {
           'text-field': ['get', 'point_count_abbreviated'],
           'text-font': ['Open Sans Regular'],
-          'text-size': 16,
-          'text-offset': [0, 0.02],
+          'text-size': 14,
         } as any,
-        paint: {
-          'text-color': '#ffffff',
-          'text-halo-color': 'rgba(0,0,0,0.35)',
-          'text-halo-width': 1.5
-        } as any
+        paint: { 'text-color': '#ffffff' } as any,
       });
 
-      // Points non clusterisés (1 point = 1 lieu regroupé)
       map.addLayer({
         id: 'unclustered-point',
         type: 'circle',
@@ -399,13 +145,12 @@ async centerNearMe() {
         filter: ['!', ['has', 'point_count']],
         paint: {
           'circle-color': '#FF4D6D',
-          'circle-radius': 8,
+          'circle-radius': 10,
           'circle-stroke-width': 2,
           'circle-stroke-color': '#ffffff',
         } as any,
       });
 
-      // Interactions clusters → zoom/développer
       map.on('click', 'clusters', (e: any) => {
         const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] });
         if (!features.length) return;
@@ -418,7 +163,6 @@ async centerNearMe() {
         });
       });
 
-      // Clic sur un point → popup carrousel
       map.on('click', 'unclustered-point', (e: any) => {
         const f = e.features[0];
         const coords = f.geometry.coordinates.slice();
@@ -440,10 +184,38 @@ async centerNearMe() {
       map.on('mouseleave', 'clusters', () => (map.getCanvas().style.cursor = ''));
       map.on('mouseenter', 'unclustered-point', () => (map.getCanvas().style.cursor = 'pointer'));
       map.on('mouseleave', 'unclustered-point', () => (map.getCanvas().style.cursor = ''));
+
+
+      this.fitOnDataOrGeolocate(data);
     });
   }
 
-  /** ====== 3) Popup carrousel pour un “lieu” ====== */
+
+  private async fitOnDataOrGeolocate(data?: GeoJSON.FeatureCollection) {
+    if (!this.map) return;
+
+    const sourceData = data ?? (this.buildGroupedGeoJSON() as any);
+    const feats = (sourceData.features || []) as any[];
+    if (feats.length) {
+      const bounds = new maplibregl.LngLatBounds();
+      for (const f of feats) bounds.extend(f.geometry.coordinates as [number, number]);
+      this.map.fitBounds(bounds, { padding: 80, maxZoom: 13, duration: 600 });
+      return;
+    }
+
+    try {
+      const pos = await new Promise<GeolocationPosition>((res, rej) =>
+        navigator.geolocation.getCurrentPosition(res, rej, {
+          enableHighAccuracy: true, timeout: 5000, maximumAge: 0
+        })
+      );
+      this.map.easeTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 12, duration: 600 });
+    } catch {
+      this.map.easeTo({ center: [2.33, 48.86], zoom: 5, duration: 600 });
+    }
+  }
+
+
   private renderCarouselPopup(
     photos: Array<{ image: string; takenAt: number }>,
     count: number
@@ -451,15 +223,11 @@ async centerNearMe() {
     if (!photos || !photos.length) return '<div>Aucune photo</div>';
 
     const main = photos[0].image || '';
-    const thumbs = photos
-      .map(
-        (p, i) => `
-          <img src="${p.image}" data-idx="${i}" style="
-            width:56px;height:56px;object-fit:cover;border-radius:6px;cursor:pointer;margin-right:6px;
-            border:1px solid rgba(0,0,0,.1);
-          "/>`
-      )
-      .join('');
+    const thumbs = photos.map((p, i) => `
+      <img src="${p.image}" data-idx="${i}" style="
+        width:56px;height:56px;object-fit:cover;border-radius:6px;cursor:pointer;margin-right:6px;
+        border:1px solid rgba(0,0,0,.1);
+      "/>`).join('');
 
     const js = `
       <script>
@@ -485,11 +253,26 @@ async centerNearMe() {
     `;
   }
 
-  /** ====== 4) Met à jour la source quand les photos changent ====== */
-  refreshMapData() {
+
+  public refreshMapData() {
     if (!this.map) return;
     const src = this.map.getSource(this.mapSourceId) as maplibregl.GeoJSONSource | undefined;
     if (!src) return;
-    src.setData(this.buildGroupedGeoJSON() as any);
+    const data = this.buildGroupedGeoJSON();
+    src.setData(data as any);
+    this.fitOnDataOrGeolocate(data);
+  }
+
+
+  public async centerNearMe() {
+    if (!this.map) return;
+    try {
+      const pos = await new Promise<GeolocationPosition>((res, rej) =>
+        navigator.geolocation.getCurrentPosition(res, rej, {
+          enableHighAccuracy: true, timeout: 7000, maximumAge: 0
+        })
+      );
+      this.map.easeTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 13, duration: 800 });
+    } catch {}
   }
 }

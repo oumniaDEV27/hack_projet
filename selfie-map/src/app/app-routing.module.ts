@@ -13,7 +13,6 @@ const routes: Routes = [
   },
   {
     path: 'gallery',
-    // <-- ICI : './pages/...' et non '../pages/...'
     loadComponent: () => import('./pages/gallery/gallery.page').then(m => m.GalleryPage),
   },
 ];

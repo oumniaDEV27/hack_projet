@@ -1,34 +1,28 @@
-/*
- * App Global CSS
- * ----------------------------------------------------------------------------
- * Styles globaux de l’app + imports Ionic & MapLibre
- */
 
-/* MapLibre CSS (contrôles, popup, etc.) */
 @import "maplibre-gl/dist/maplibre-gl.css";
 
-/* Core CSS requis pour Ionic */
+
 @import "@ionic/angular/css/core.css";
 
-/* Basic CSS pour apps Ionic */
+
 @import "@ionic/angular/css/normalize.css";
 @import "@ionic/angular/css/structure.css";
 @import "@ionic/angular/css/typography.css";
 @import "@ionic/angular/css/display.css";
 
-/* Utils optionnels */
+
 @import "@ionic/angular/css/padding.css";
 @import "@ionic/angular/css/float-elements.css";
 @import "@ionic/angular/css/text-alignment.css";
 @import "@ionic/angular/css/text-transformation.css";
 @import "@ionic/angular/css/flex-utils.css";
 
-/* Dark mode auto (tu peux changer selon ton besoin) */
+
 @import "@ionic/angular/css/palettes/dark.system.css";
 @import "mapbox-gl/dist/mapbox-gl.css";
 
 
-/* ---- Hauteur & layout de la carte ---- */
+
 html, body, app-root, ion-app, ion-content {
   block-size: 100%;
 }
@@ -47,7 +41,6 @@ html, body, app-root, ion-app, ion-content {
   inset: 0;
 }
 
-/* ---- Caméra ---- */
 video.hidden {
   display: none;
 }

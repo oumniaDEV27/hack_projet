@@ -18,9 +18,9 @@ export class CameraPage implements OnDestroy {
   private stream?: MediaStream;
   private starting = false;
 
-  previewing = false;   // flux live actif ?
-  useFront   = true;    // caméra front par défaut
-  isReview   = false;   // mode REVIEW (affiche la photo capturée)
+  previewing = false; 
+  useFront   = true;   
+  isReview   = false;   
   snapshotDataUrl: string | null = null;
 
   constructor(
@@ -31,7 +31,7 @@ export class CameraPage implements OnDestroy {
   ) {}
 
   ionViewDidEnter() {
-    // auto-start si tu veux ; sinon commente
+
     this.startPreview().catch(() => {});
   }
 
@@ -46,12 +46,12 @@ export class CameraPage implements OnDestroy {
     return err?.message || 'Erreur inconnue.';
   }
 
-  /** LIVE: démarre la prévisualisation caméra */
+
   async startPreview() {
     if (this.starting) return;
     this.starting = true;
     try {
-      // on repasse en mode LIVE (cache l’image review)
+
       this.isReview = false;
       this.snapshotDataUrl = null;
 
@@ -103,7 +103,7 @@ export class CameraPage implements OnDestroy {
     }
   }
 
-  /** STOP: coupe le flux */
+
   async stopPreview() {
     this.previewing = false;
     const video = this.videoRef?.nativeElement;
@@ -117,7 +117,7 @@ export class CameraPage implements OnDestroy {
     }
   }
 
-  /** LIVE -> LIVE: inverse la caméra */
+
   async switchCamera() {
     this.useFront = !this.useFront;
     if (this.previewing || this.starting) {
@@ -125,7 +125,7 @@ export class CameraPage implements OnDestroy {
     }
   }
 
-  /** LIVE -> REVIEW: capture et affiche l’image */
+
   async takeSnapshot() {
     if (!this.previewing) return;
 
@@ -143,18 +143,18 @@ export class CameraPage implements OnDestroy {
 
     this.snapshotDataUrl = canvas.toDataURL('image/jpeg', 0.9);
 
-    // passe en mode REVIEW : cache la vidéo, montre l’image capturée
+
     this.isReview = true;
 
-    // optionnel: on peut mettre pause pour “geler” le flux pendant la review
+
     try { await video.pause(); } catch {}
   }
 
-  /** REVIEW -> LIVE: on recommence */
+
   async retake() {
     this.isReview = false;
     this.snapshotDataUrl = null;
-    // relance le flux si nécessaire
+
     if (!this.previewing) {
       await this.startPreview();
     } else {
@@ -162,7 +162,7 @@ export class CameraPage implements OnDestroy {
     }
   }
 
-  /** REVIEW -> save + retour */
+
   async usePhoto() {
     if (!this.snapshotDataUrl) return;
     await this.photoService.saveFromDataUrl(this.snapshotDataUrl);

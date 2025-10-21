@@ -1,13 +1,11 @@
 <ion-header>
   <ion-toolbar>
-    <!-- Bouton retour vers la galerie de photos -->
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/photos"></ion-back-button>
     </ion-buttons>
 
     <ion-title>Carte</ion-title>
 
-    <!-- Bouton de rafraîchissement -->
     <ion-buttons slot="end">
       <ion-button (click)="refreshMapData()">
         <ion-icon name="refresh-outline"></ion-icon>
@@ -17,17 +15,17 @@
 </ion-header>
 
 <ion-content>
-  <!-- Conteneur de la carte -->
+
   <div #mapEl class="map-container"></div>
 
-  <!-- Bouton “me centrer” -->
+
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
     <ion-fab-button (click)="centerNearMe()">
       <ion-icon name="locate-outline"></ion-icon>
     </ion-fab-button>
   </ion-fab>
 
-  <!-- Message d’aide -->
+
   <div class="map-hint">
     <ion-text color="medium">
       Zoom avant pour voir les points regroupés, et cliquez pour afficher les photos.
